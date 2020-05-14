@@ -1,0 +1,23 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  namespace: dpc
+  name: develop
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: develop-binding
+  namespace: dpc
+subjects:
+- kind: User
+  name: tongxin
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: develop
+  apiGroup: ""

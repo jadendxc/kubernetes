@@ -1,0 +1,20 @@
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: lsc-wsserver-deployment
+  namespace: dpc
+spec:
+  selector:
+    matchLabels:
+      app: lsc-wsserver
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: lsc-wsserver
+    spec:
+      containers:
+      - name: lsc-wsserver
+        image: registry.tongxin.dpc.com/tomcat:8.5
+        ports:
+        - containerPort: 80

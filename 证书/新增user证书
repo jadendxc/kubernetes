@@ -1,0 +1,20 @@
+openssl genrsa -out tongxin.key 2048
+openssl req -new -key tongxin.key -out tongxin.csr -subj "/CN=tongxin/O=develop"
+openssl x509 -req -in tongxin.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out tongxin.crt -days 3650
+
+kubectl config set-credentials tongxin --client-certificate=tongxin.crt --client-key=tongxin.key
+
+kubectl config set-context tongxin@kubernetes --cluster=kubernetes --namespace=dpc --user=tongxin
+
+kubectl config use-context tongxin@kubernetes
+
+
+
+通过命令
+kubectl config set-credentials tom --client-certificate=path/to/tom.crt --client-key=path/to/tom.key
+将用户tom的验证信息添加进kubectl的配置
+此命令会在配置中添加一个名为tom的用户
+kubectl config set-context tom@aliyun --cluster=aliyun --namespace=a-1 --user=tom
+此命令添加了一个context配置——设定使用aliyun集群，默认使用a-1命名空间，使用用户tom进行验证
+在命令中带上 kubectl --context=tom@aliyun ... 参数即可指定kubectl使用之前添加的名为tom@aliyun的context操作集群
+也可以通过命令 kubectl config use-context tom@aliyun 来设置当前激活的context
