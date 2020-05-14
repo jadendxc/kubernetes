@@ -1,7 +1,53 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: lsc-wsserver-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /mnt/dpc/lsc-wsserver-log
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lsc-wsserver-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: lsc-wsserver-log
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lsc-wsserver
+  namespace: dpc  
+  labels:
+    app: lsc-wsserver
+spec:
+  type: NodePort    
+  ports:
+  - protocol: TCP
+    port: 9898
+    targetPort: 8080
+    nodePort: 9898
+    name: lsc-wsserver
+  selector:
+    app: lsc-wsserver
+---
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
-  name: lsc-wsserver-deployment
+  name: lsc-wsserver
   namespace: dpc
 spec:
   selector:
@@ -15,6 +61,18 @@ spec:
     spec:
       containers:
       - name: lsc-wsserver
-        image: registry.tongxin.dpc.com/tomcat:8.5
+        image: registry.tongxin.dpc.com/lsc-wsserver:1.0-SNAPSHOT
+        command:
+        - sh
+        - "-c"
+        - |
+          java -server -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector -Dlog4j2.asyncLoggerRingBufferSize=1024 -DAsyncLogger.WaitStrategy=busyspin -XX:CompileCommand=dontinline,org.apache.logging.log4j.core.async.perftest.NoOpIdleStrategy::idle -jar wsserver-1.0-SNAPSHOT.jar
         ports:
-        - containerPort: 80
+        - containerPort: 8080
+        volumeMounts:
+        - name: lsc-wsserver-log
+          mountPath: /home/lsc-wsserver/logs    
+      volumes:                     
+        - name: lsc-wsserver-log
+          persistentVolumeClaim:
+            claimName: lsc-wsserver-log

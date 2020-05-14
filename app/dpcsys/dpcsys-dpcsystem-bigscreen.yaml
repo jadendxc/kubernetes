@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dpcsys-dpcsystem-bigScreen-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  nfs:
+    path: /mnt/dpc/dpcsys/dpcsys-dpcsystem-bigScreen-log
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dpcsys-dpcsystem-bigScreen-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: dpcsys-dpcsystem-bigScreen-log
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dpcsys-dpcsystem-bigScreen
+  namespace: dpc  
+  labels:
+    app: dpcsys-dpcsystem-bigScreen
+spec:
+  type: NodePort    
+  ports:
+  - protocol: TCP
+    port: 9898
+    targetPort: 8080
+    nodePort: 10504
+    name: dpcsys-dpcsystem-bigScreen
+  selector:
+    app: dpcsys-dpcsystem-bigScreen
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: dpcsys-dpcsystem-bigScreen
+  namespace: dpc
+spec:
+  selector:
+    matchLabels:
+      app: dpcsys-dpcsystem-bigScreen
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: dpcsys-dpcsystem-bigScreen
+    spec:
+      containers:
+      - name: dpcsys-dpcsystem-bigScreen
+        image: registry.tongxin.dpc.com/dpcsys-dpcsystem-bigScreen:1.0-SNAPSHOT
+        command:
+        - sh
+        - "-c"
+        - |
+          java -server -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationConcurrentTime -XX:+PrintGCApplicationStoppedTime -jar dpcsys-dpcsystem-bigScreen-0.0.1-SNAPSHOT.jar
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: dpcsys-dpcsystem-bigScreen-log
+          mountPath: /home/dpcsys-dpcsystem-bigScreen/logs  
+      volumes:                     
+        - name: dpcsys-dpcsystem-bigScreen-log
+          persistentVolumeClaim:
+            claimName: dpcsys-dpcsystem-bigScreen-log

@@ -18,3 +18,5 @@ kubectl config set-context tom@aliyun --cluster=aliyun --namespace=a-1 --user=to
 此命令添加了一个context配置——设定使用aliyun集群，默认使用a-1命名空间，使用用户tom进行验证
 在命令中带上 kubectl --context=tom@aliyun ... 参数即可指定kubectl使用之前添加的名为tom@aliyun的context操作集群
 也可以通过命令 kubectl config use-context tom@aliyun 来设置当前激活的context
+
+>kubectl --kubeconfig C:\Users\duanx\.kube\config.admin

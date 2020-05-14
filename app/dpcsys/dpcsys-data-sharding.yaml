@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dpcsys-data-sharding-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 10Gi
+  nfs:
+    path: /mnt/dpc/dpcsys/dpcsys-data-sharding-log
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dpcsys-data-sharding-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeName: dpcsys-data-sharding-log
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dpcsys-data-sharding-data
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 100Gi
+  nfs:
+    path: /mnt/dpc/dpcsys/dpcsys-data-sharding-data
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dpcsys-data-sharding-data
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  volumeName: dpcsys-data-sharding-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dpcsys-data-sharding
+  namespace: dpc  
+  labels:
+    app: dpcsys-data-sharding
+spec: 
+  ports:
+  - protocol: TCP
+    port: 8083
+    targetPort: 8083
+    name: dpcsys-data-sharding
+  selector:
+    app: dpcsys-data-sharding
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: dpcsys-data-sharding
+  namespace: dpc
+spec:
+  selector:
+    matchLabels:
+      app: dpcsys-data-sharding
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: dpcsys-data-sharding
+    spec:
+      containers:
+      - name: dpcsys-data-sharding
+        image: registry.tongxin.dpc.com/dpcsys_data_sharding:1.0-SNAPSHOT
+        command:
+        - sh
+        - "-c"
+        - |
+          java -server -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector -Dlog4j2.asyncLoggerRingBufferSize=1024 -DAsyncLogger.WaitStrategy=busyspin -XX:CompileCommand=dontinline,org.apache.logging.log4j.core.async.perftest.NoOpIdleStrategy::idle -jar dpcsys_data_sharding-1.0-SNAPSHOT.jar
+        ports:
+        - containerPort: 8083
+        volumeMounts:
+        - name: dpcsys-data-sharding-log
+          mountPath: /home/dpcsys_data_sharding/logs
+        - name: dpcsys-data-sharding-data
+          mountPath: /home/dpc/dataFile
+      volumes:                     
+        - name: dpcsys-data-sharding-log
+          persistentVolumeClaim:
+            claimName: dpcsys-data-sharding-log
+        - name: dpcsys-data-sharding-data
+          persistentVolumeClaim:
+            claimName: dpcsys-data-sharding-data

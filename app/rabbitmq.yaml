@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rabbitmq-data
+  namespace: dpc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  nfs:
+    path: /mnt/dpc/rabbitmq/rabbitmq-data
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rabbitmq-data
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: rabbitmq-data
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rabbitmq-config
+  namespace: dpc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  nfs:
+    path: /mnt/dpc/rabbitmq/rabbitmq-config
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rabbitmq-config
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: rabbitmq-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dpc  
+  name: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  selector:
+    app: rabbitmq
+  type: NodePort    
+  ports:
+    - protocol: TCP
+      port: 25672
+      targetPort: 15672
+      nodePort: 25672
+      name: rabbitmq
+    - protocol: TCP
+      port: 56720
+      targetPort: 5672
+      name: rabbitmq-web     
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: dpc
+spec:
+  selector:
+    matchLabels:
+      app: rabbitmq # has to match .spec.template.metadata.labels
+  replicas: 1 # by default is 1
+  template:
+    metadata:
+      labels:
+        app: rabbitmq # has to match .spec.selector.matchLabels
+    spec:                   
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: rabbitmq
+        image: registry.tongxin.dpc.com/rabbitmq:3-management
+        ports:
+        - containerPort: 5672
+        - containerPort: 15672       
+        volumeMounts:
+        - name: rabbitmq-data
+          mountPath: /etc/rabbitmq
+        - name: rabbitmq-data
+          mountPath: /var/lib/rabbitmq      
+      volumes:                     
+        - name: rabbitmq-data
+          persistentVolumeClaim:
+            claimName: rabbitmq-data
+        - name: rabbitmq-config
+          persistentVolumeClaim:
+            claimName: rabbitmq-config
