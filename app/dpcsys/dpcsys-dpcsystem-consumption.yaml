@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dpcsys-dpcsystem-consumption-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /mnt/dpc/dpcsys/dpcsys-dpcsystem-consumption-log
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dpcsys-dpcsystem-consumption-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: dpcsys-dpcsystem-consumption-log
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dpcsys-dpcsystem-consumption-file
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /mnt/dpc/dpcsys/dpcsys-dpcsystem-consumption-file
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dpcsys-dpcsystem-consumption-file
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: dpcsys-dpcsystem-consumption-file
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dpcsys-dpcsystem-consumption
+  namespace: dpc  
+  labels:
+    app: dpcsys-dpcsystem-consumption
+spec:
+  type: NodePort    
+  ports:
+  - protocol: TCP
+    port: 8081
+    targetPort: 8080
+    nodePort: 10505
+    name: dpcsys-dpcsystem-consumption
+  selector:
+    app: dpcsys-dpcsystem-consumption
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: dpcsys-dpcsystem-consumption
+  namespace: dpc
+spec:
+  selector:
+    matchLabels:
+      app: dpcsys-dpcsystem-consumption
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: dpcsys-dpcsystem-consumption
+    spec:
+      containers:
+      - name: dpcsys-dpcsystem-consumption
+        imagePullPolicy: Always
+        image: registry.tongxin.dpc.com/dpcsys-dpcsystem-consumption:0.1
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: dpcsys-dpcsystem-consumption-log
+          mountPath: /usr/local/tomcat/logs
+        - name: dpcsys-dpcsystem-consumption-file
+          mountPath: /usr/local/tomcat/webapps/examples/file           
+      volumes:                     
+        - name: dpcsys-dpcsystem-consumption-log
+          persistentVolumeClaim:
+            claimName: dpcsys-dpcsystem-consumption-log
+        - name: dpcsys-dpcsystem-consumption-file
+          persistentVolumeClaim:
+            claimName: dpcsys-dpcsystem-consumption-file            

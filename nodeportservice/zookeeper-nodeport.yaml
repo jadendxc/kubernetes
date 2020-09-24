@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dpc  
+  name: zookeeper-nodeport
+  labels:
+    app: zookeeper-nodeport
+spec:
+  selector:
+    app: zookeeper  
+  ports:
+    - protocol: TCP
+      nodePort: 2182    
+      port: 2181
+      name: zookeeper
+    - protocol: TCP
+      nodePort: 21820
+      port: 21810
+      name: zookeeper-dpcsys
+  type: NodePort      

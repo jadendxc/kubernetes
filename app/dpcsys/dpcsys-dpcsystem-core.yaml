@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dpcsys-dpcsystem-core-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /mnt/dpc/dpcsys/dpcsys-dpcsystem-core-log
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dpcsys-dpcsystem-core-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: dpcsys-dpcsystem-core-log
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dpcsys-dpcsystem-core
+  namespace: dpc  
+  labels:
+    app: dpcsys-dpcsystem-core
+spec: 
+  ports:
+  - protocol: TCP
+    port: 25812
+    targetPort: 25812
+    name: dpcsys-dpcsystem-core
+  selector:
+    app: dpcsys-dpcsystem-core
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: dpcsys-dpcsystem-core
+  namespace: dpc
+spec:
+  selector:
+    matchLabels:
+      app: dpcsys-dpcsystem-core
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: dpcsys-dpcsystem-core
+    spec:
+      containers:
+      - name: dpcsys-dpcsystem-core
+        imagePullPolicy: Always    
+        image: registry.tongxin.dpc.com/dpcsys-dpcsystem-core:0.1
+        command:
+        - sh
+        - "-c"
+        - |
+          java -jar dpcsys-dpcsystem-core-0.1.jar        
+        ports:
+        - containerPort: 25812
+        volumeMounts:
+        - name: dpcsys-dpcsystem-core-log
+          mountPath: /home/dpcsys-dpcsystem-core/logs
+        - name: dpcsys-dpcsystem-consumption-file
+          mountPath: /usr/local/tomcat/webapps/examples/file          
+      volumes:                     
+        - name: dpcsys-dpcsystem-core-log
+          persistentVolumeClaim:
+            claimName: dpcsys-dpcsystem-core-log
+        - name: dpcsys-dpcsystem-consumption-file
+          persistentVolumeClaim:
+            claimName: dpcsys-dpcsystem-consumption-file            

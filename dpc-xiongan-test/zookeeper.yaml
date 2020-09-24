@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zookeeper-data-dpc-xiongan-test
+  namespace: dpc-xiongan-test
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  nfs:
+    path: /mnt/dpc-xiongan-test/zookeeper-data
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zookeeper-data
+  namespace: dpc-xiongan-test  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: zookeeper-data-dpc-xiongan-test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dpc-xiongan-test  
+  name: zookeeper
+  labels:
+    app: zookeeper
+spec:
+  selector:
+    app: zookeeper  
+  ports:
+    - protocol: TCP
+      port: 2181
+      name: zookeeper   
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zookeeper
+  namespace: dpc-xiongan-test
+spec:
+  selector:
+    matchLabels:
+      app: zookeeper # has to match .spec.template.metadata.labels
+  replicas: 1 # by default is 1
+  template:
+    metadata:
+      labels:
+        app: zookeeper # has to match .spec.selector.matchLabels
+    spec:                   
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: zookeeper
+        image: registry.tongxin.dpc.com/zookeeper:3.5.5
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ZOO_SERVERS
+          value: server.1=0.0.0.0:2888:3888;2181
+        - name: ZOO_ADMINSERVER_ENABLED
+          value: "false"             
+        volumeMounts:
+        - name: zookeeper-data
+          mountPath: /datalog
+      volumes:                     
+        - name: zookeeper-data
+          persistentVolumeClaim:
+            claimName: zookeeper-data

@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dpcsys-dpcinterface-core-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /mnt/dpc/dpcsys/dpcsys-dpcinterface-core-log
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dpcsys-dpcinterface-core-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: dpcsys-dpcinterface-core-log
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dpcsys-dpcinterface-core
+  namespace: dpc  
+  labels:
+    app: dpcsys-dpcinterface-core
+spec: 
+  ports:
+  - protocol: TCP
+    port: 21815
+    targetPort: 21815
+    name: dpcsys-dpcinterface-core
+  selector:
+    app: dpcsys-dpcinterface-core
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: dpcsys-dpcinterface-core
+  namespace: dpc
+spec:
+  selector:
+    matchLabels:
+      app: dpcsys-dpcinterface-core
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: dpcsys-dpcinterface-core
+    spec:
+      containers:
+      - name: dpcsys-dpcinterface-core
+        imagePullPolicy: Always
+        image: registry.tongxin.dpc.com/dpcsys-dpcinterface-core:0.1
+        command:
+        - sh
+        - "-c"
+        - |
+          java -jar dpcsys-dpcInterface-core-0.1.jar        
+        ports:
+        - containerPort: 21815
+        volumeMounts:
+        - name: dpcsys-dpcinterface-core-log
+          mountPath: /home/dpcsys-dpcInterface-core/logs
+        - name: dpcsys-data-sharding-data
+          mountPath: /tmp/test/file          
+      volumes:                     
+        - name: dpcsys-dpcinterface-core-log
+          persistentVolumeClaim:
+            claimName: dpcsys-dpcinterface-core-log
+        - name: dpcsys-data-sharding-data
+          persistentVolumeClaim:
+            claimName: dpcsys-data-sharding-data           

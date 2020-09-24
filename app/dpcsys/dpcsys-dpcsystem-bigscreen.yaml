@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: dpcsys-dpcsystem-bigScreen-log
+  name: dpcsys-dpcsystem-bigscreen-log
   namespace: dpc  
 spec:
   accessModes:
@@ -9,14 +9,14 @@ spec:
   capacity:
     storage: 1Gi
   nfs:
-    path: /mnt/dpc/dpcsys/dpcsys-dpcsystem-bigScreen-log
+    path: /mnt/dpc/dpcsys/dpcsys-dpcsystem-bigscreen-log
     server: 192.168.88.109
   persistentVolumeReclaimPolicy: Retain
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: dpcsys-dpcsystem-bigScreen-log
+  name: dpcsys-dpcsystem-bigscreen-log
   namespace: dpc  
 spec:
   accessModes:
@@ -24,15 +24,15 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  volumeName: dpcsys-dpcsystem-bigScreen-log
+  volumeName: dpcsys-dpcsystem-bigscreen-log
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: dpcsys-dpcsystem-bigScreen
+  name: dpcsys-dpcsystem-bigscreen
   namespace: dpc  
   labels:
-    app: dpcsys-dpcsystem-bigScreen
+    app: dpcsys-dpcsystem-bigscreen
 spec:
   type: NodePort    
   ports:
@@ -40,39 +40,40 @@ spec:
     port: 9898
     targetPort: 8080
     nodePort: 10504
-    name: dpcsys-dpcsystem-bigScreen
+    name: dpcsys-dpcsystem-bigscreen
   selector:
-    app: dpcsys-dpcsystem-bigScreen
+    app: dpcsys-dpcsystem-bigscreen
 ---
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
-  name: dpcsys-dpcsystem-bigScreen
+  name: dpcsys-dpcsystem-bigscreen
   namespace: dpc
 spec:
   selector:
     matchLabels:
-      app: dpcsys-dpcsystem-bigScreen
+      app: dpcsys-dpcsystem-bigscreen
   replicas: 1 # tells deployment to run 2 pods matching the template
   template:
     metadata:
       labels:
-        app: dpcsys-dpcsystem-bigScreen
+        app: dpcsys-dpcsystem-bigscreen
     spec:
       containers:
-      - name: dpcsys-dpcsystem-bigScreen
-        image: registry.tongxin.dpc.com/dpcsys-dpcsystem-bigScreen:1.0-SNAPSHOT
+      - name: dpcsys-dpcsystem-bigscreen
+        imagePullPolicy: Always
+        image: registry.tongxin.dpc.com/dpcsys-dpcsystem-bigscreen:0.0.1-SNAPSHOT
         command:
         - sh
         - "-c"
         - |
-          java -server -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationConcurrentTime -XX:+PrintGCApplicationStoppedTime -jar dpcsys-dpcsystem-bigScreen-0.0.1-SNAPSHOT.jar
+          java -server -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationConcurrentTime -XX:+PrintGCApplicationStoppedTime -jar dpcsys-dpcsystem-bigscreen-0.0.1-SNAPSHOT.jar
         ports:
         - containerPort: 8080
         volumeMounts:
-        - name: dpcsys-dpcsystem-bigScreen-log
-          mountPath: /home/dpcsys-dpcsystem-bigScreen/logs  
+        - name: dpcsys-dpcsystem-bigscreen-log
+          mountPath: /home/dpcsys-dpcsystem-bigscreen/logs  
       volumes:                     
-        - name: dpcsys-dpcsystem-bigScreen-log
+        - name: dpcsys-dpcsystem-bigscreen-log
           persistentVolumeClaim:
-            claimName: dpcsys-dpcsystem-bigScreen-log
+            claimName: dpcsys-dpcsystem-bigscreen-log

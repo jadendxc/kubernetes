@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: rabbitmq-nodeport
+  name: rabbitmq-nodeport
+  namespace: dpc
+spec:
+  externalTrafficPolicy: Cluster
+  ports:
+  - name: rabbitmq-web
+    nodePort: 15673
+    port: 15672
+    protocol: TCP
+    targetPort: 15672
+  - name: rabbitmq
+    nodePort: 5673
+    port: 5672
+    protocol: TCP
+    targetPort: 5672
+  selector:
+    app: rabbitmq
+  sessionAffinity: None
+  type: NodePort

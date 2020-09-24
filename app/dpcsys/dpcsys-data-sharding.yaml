@@ -87,6 +87,7 @@ spec:
     spec:
       containers:
       - name: dpcsys-data-sharding
+        imagePullPolicy: Always
         image: registry.tongxin.dpc.com/dpcsys_data_sharding:1.0-SNAPSHOT
         command:
         - sh

@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: rabbitmq-data
-  namespace: dpc
+  name: rabbitmq-data-dpc-xiongan-test
+  namespace: dpc-xiongan-test
 spec:
   accessModes:
   - ReadWriteOnce
   capacity:
     storage: 1Gi
   nfs:
-    path: /mnt/dpc/rabbitmq/rabbitmq-data
+    path: /mnt/dpc-xiongan-test/rabbitmq/rabbitmq-data
     server: 192.168.88.109
   persistentVolumeReclaimPolicy: Retain
 ---
@@ -17,27 +17,27 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: rabbitmq-data
-  namespace: dpc  
+  namespace: dpc-xiongan-test  
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
-  volumeName: rabbitmq-data
+  volumeName: rabbitmq-data-dpc-xiongan-test
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: rabbitmq-config
-  namespace: dpc
+  name: rabbitmq-config-dpc-xiongan-test
+  namespace: dpc-xiongan-test
 spec:
   accessModes:
   - ReadWriteOnce
   capacity:
     storage: 1Gi
   nfs:
-    path: /mnt/dpc/rabbitmq/rabbitmq-config
+    path: /mnt/dpc-xiongan-test/rabbitmq/rabbitmq-config
     server: 192.168.88.109
   persistentVolumeReclaimPolicy: Retain
 ---
@@ -45,40 +45,40 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: rabbitmq-config
-  namespace: dpc  
+  namespace: dpc-xiongan-test  
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
-  volumeName: rabbitmq-config
+  volumeName: rabbitmq-config-dpc-xiongan-test  
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: dpc  
+  namespace: dpc-xiongan-test  
   name: rabbitmq
   labels:
     app: rabbitmq
 spec:
   selector:
-    app: rabbitmq   
+    app: rabbitmq  
   ports:
     - protocol: TCP
-      port: 25672
-      targetPort: 15672
+      port: 5672
       name: rabbitmq
     - protocol: TCP
-      port: 56720
-      targetPort: 5672
-      name: rabbitmq-web     
+      port: 15672
+      nodePort: 15674
+      name: rabbitmq-web
+  type: NodePort 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbitmq
-  namespace: dpc
+  namespace: dpc-xiongan-test
 spec:
   selector:
     matchLabels:
@@ -95,16 +95,4 @@ spec:
         image: registry.tongxin.dpc.com/rabbitmq:3-management
         ports:
         - containerPort: 5672
-        - containerPort: 15672       
-        volumeMounts:
-        - name: rabbitmq-data
-          mountPath: /etc/rabbitmq
-        - name: rabbitmq-data
-          mountPath: /var/lib/rabbitmq      
-      volumes:                     
-        - name: rabbitmq-data
-          persistentVolumeClaim:
-            claimName: rabbitmq-data
-        - name: rabbitmq-config
-          persistentVolumeClaim:
-            claimName: rabbitmq-config
+        - containerPort: 15672

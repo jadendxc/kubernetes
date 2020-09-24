@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dpcsys-dpcnmm-core-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /mnt/dpc/dpcsys/dpcsys-dpcnmm-core-log
+    server: 192.168.88.109
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dpcsys-dpcnmm-core-log
+  namespace: dpc  
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: dpcsys-dpcnmm-core-log
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dpcsys-dpcnmm-core
+  namespace: dpc  
+  labels:
+    app: dpcsys-dpcnmm-core
+spec: 
+  ports:
+  - protocol: TCP
+    port: 25812
+    targetPort: 25812
+    name: dpcsys-dpcnmm-core
+  selector:
+    app: dpcsys-dpcnmm-core
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: dpcsys-dpcnmm-core
+  namespace: dpc
+spec:
+  selector:
+    matchLabels:
+      app: dpcsys-dpcnmm-core
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: dpcsys-dpcnmm-core
+    spec:
+      containers:
+      - name: dpcsys-dpcnmm-core
+        imagePullPolicy: Always      
+        image: registry.tongxin.dpc.com/dpcsys-dpcnmm-core:0.1
+        command:
+        - sh
+        - "-c"
+        - |
+          java -jar dpcsys-dpcnmm-core-0.1.jar        
+        ports:
+        - containerPort: 25812
+        volumeMounts:
+        - name: dpcsys-dpcnmm-core-log
+          mountPath: /home/dpcsys-dpcnmm-core/logs
+        - name: dpcsys-data-sharding-data
+          mountPath: /tmp/test/file          
+      volumes:                     
+        - name: dpcsys-dpcnmm-core-log
+          persistentVolumeClaim:
+            claimName: dpcsys-dpcnmm-core-log
+        - name: dpcsys-data-sharding-data
+          persistentVolumeClaim:
+            claimName: dpcsys-data-sharding-data           

@@ -61,6 +61,7 @@ spec:
     spec:
       containers:
       - name: lsc-wsserver
+        imagePullPolicy: Always
         image: registry.tongxin.dpc.com/lsc-wsserver:1.0-SNAPSHOT
         command:
         - sh

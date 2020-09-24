@@ -1,0 +1,35 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: develop
+  namespace: dpc-xiongan-test
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dpc-developer
+  namespace: dpc-xiongan-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: develop
+subjects:
+- kind: ServiceAccount
+  name: dpc-developer
+  namespace: dpc
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: tongxin

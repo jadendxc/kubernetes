@@ -1,74 +1,74 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: dongliyuan-pc-webapps
+  name: dpcsys-dpcnmm-consumption-log
   namespace: dpc  
 spec:
   accessModes:
   - ReadWriteOnce
   capacity:
-    storage: 200Mi
+    storage: 5Gi
   nfs:
-    path: /mnt/dpc/dongliyuan-pc-webapps
+    path: /mnt/dpc/dpcsys/dpcsys-dpcnmm-consumption-log
     server: 192.168.88.109
   persistentVolumeReclaimPolicy: Retain
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: dongliyuan-pc-webapps
+  name: dpcsys-dpcnmm-consumption-log
   namespace: dpc  
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 200Mi
-  volumeName: dongliyuan-pc-webapps
+      storage: 5Gi
+  volumeName: dpcsys-dpcnmm-consumption-log
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: dongliyuan-pc
+  name: dpcsys-dpcnmm-consumption
   namespace: dpc  
   labels:
-    app: dongliyuan-pc
+    app: dpcsys-dpcnmm-consumption
 spec:
-  type: NodePort  
+  type: NodePort    
   ports:
   - protocol: TCP
-    port: 8080
+    port: 8082
     targetPort: 8080
-    nodePort: 10502
-    name: dongliyuan-pc
+    nodePort: 10506
+    name: dpcsys-dpcnmm-consumption
   selector:
-    app: dongliyuan-pc
+    app: dpcsys-dpcnmm-consumption
 ---
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
-  name: dongliyuan-pc
+  name: dpcsys-dpcnmm-consumption
   namespace: dpc
 spec:
   selector:
     matchLabels:
-      app: dongliyuan-pc
+      app: dpcsys-dpcnmm-consumption
   replicas: 1 # tells deployment to run 2 pods matching the template
   template:
     metadata:
       labels:
-        app: dongliyuan-pc
+        app: dpcsys-dpcnmm-consumption
     spec:
       containers:
-      - name: dongliyuan-pc
-        imagePullPolicy: Always
-        image: registry.tongxin.dpc.com/tomcat:8.5
+      - name: dpcsys-dpcnmm-consumption
+        imagePullPolicy: Always      
+        image: registry.tongxin.dpc.com/dpcsys-dpcnmm-consumption:0.1
         ports:
         - containerPort: 8080
         volumeMounts:
-        - name: dongliyuan-pc-webapps
-          mountPath: /usr/local/tomcat/webapps   
+        - name: dpcsys-dpcnmm-consumption-log
+          mountPath: /usr/local/tomcat/logs           
       volumes:                     
-        - name: dongliyuan-pc-webapps
+        - name: dpcsys-dpcnmm-consumption-log
           persistentVolumeClaim:
-            claimName: dongliyuan-pc-webapps        
+            claimName: dpcsys-dpcnmm-consumption-log          

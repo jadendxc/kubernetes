@@ -1,0 +1,294 @@
+#如果已存在service，直接把selector对应的标签改为mysql-nfs
+#172.16.12.251:/sdsfs/sc-4T-2
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"  
+  labels:
+    app: mysql-nfs
+  name: mysql-nfs
+  namespace: yehuaqi
+spec:
+  clusterIP: None
+  ports:
+  - name: mysql
+    port: 3306
+    protocol: TCP
+    targetPort: 3306
+  selector:
+    app: mysql-nfs
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: datadir-nfs-mysql-nfs-0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 200Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nfs-mysql-nfs-0
+    namespace: yehuaqi
+  nfs:
+    path: /sdsfs/sc-4T-2/datadir-nfs-mysql-nfs-0
+    server: 172.16.12.251
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: datadir-nfs-mysql-nfs-1
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 200Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nfs-mysql-nfs-1
+    namespace: yehuaqi
+  nfs:
+    path: /sdsfs/sc-4T-2/datadir-nfs-mysql-nfs-1
+    server: 172.16.12.251
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: datadir-nfs-mysql-nfs-2
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 200Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-nfs-mysql-nfs-2
+    namespace: yehuaqi
+  nfs:
+    path: /sdsfs/sc-4T-2/datadir-nfs-mysql-nfs-2
+    server: 172.16.12.251
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: mysql-nfs
+  name: datadir-nfs-mysql-nfs-0
+  namespace: yehuaqi
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+  volumeName: datadir-nfs-mysql-nfs-0
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: mysql-nfs
+  name: datadir-nfs-mysql-nfs-1
+  namespace: yehuaqi
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+  volumeName: datadir-nfs-mysql-nfs-1
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: mysql-nfs
+  name: datadir-nfs-mysql-nfs-2
+  namespace: yehuaqi
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+  volumeName: datadir-nfs-mysql-nfs-2
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   labels:
+#     app: mysql-nfs
+#   name: mysql-nfs
+#   namespace: yehuaqi
+# spec:
+#   clusterIP: None
+#   ports:
+#   - name: mysql
+#     port: 3306
+#     protocol: TCP
+#     targetPort: 3306
+#   selector:
+#     app: mysql-nfs
+#   sessionAffinity: None
+#   type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: mysql-nfs
+  name: mysql-nfs
+  namespace: yehuaqi
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 0
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: mysql-nfs
+  serviceName: mysql-nfs
+  template:
+    metadata:
+      labels:
+        app: mysql-nfs
+    spec:
+      containers:
+      - env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: GALERA_SERVICE
+          value: mysql-nfs
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: mysql
+        image: docker-registry.default.svc:5000/openshift/k8s-mariadb-cluster:laster
+        imagePullPolicy: Always
+        name: mysql-nfs
+        ports:
+        - containerPort: 3306
+          name: mysql
+          protocol: TCP
+        - containerPort: 4444
+          name: sst
+          protocol: TCP
+        - containerPort: 4567
+          name: replication
+          protocol: TCP
+        - containerPort: 4568
+          name: ist
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e 'show databases;'
+          failureThreshold: 3
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/mysql/conf.d
+          name: config
+        - mountPath: /var/lib/mysql
+          name: datadir-nfs
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - cp /configmap/* /etc/mysql/conf.d
+        image: docker-registry.default.svc:5000/openshift/busybox:lastest
+        imagePullPolicy: Always
+        name: copy-mariadb-config
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /configmap
+          name: configmap
+        - mountPath: /etc/mysql/conf.d
+          name: config
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: config
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: galera.cnf
+            path: galera.cnf
+          - key: mariadb.cnf
+            path: mariadb.cnf
+          name: mysql-config-vol-nfs
+        name: configmap
+  updateStrategy:
+    type: OnDelete
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir-nfs
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 200Gi
+---
+apiVersion: v1
+data:
+  galera.cnf: |
+    [galera]
+    user = mysql
+    bind-address = 0.0.0.0
+
+    default_storage_engine = InnoDB
+    binlog_format = ROW
+    innodb_autoinc_lock_mode = 2
+    innodb_flush_log_at_trx_commit = 0
+    query_cache_size = 0
+    query_cache_type = 0
+
+    # MariaDB Galera settings
+    wsrep_on=ON
+    wsrep_provider=/usr/lib/galera/libgalera_smm.so
+    wsrep_sst_method=rsync
+
+    # Cluster settings (automatically updated)
+    wsrep_cluster_address=gcomm://
+    wsrep_cluster_name=galera
+    wsrep_node_address=127.0.0.1
+  mariadb.cnf: |
+    [client]
+    default-character-set = utf8
+    [mysqld]
+    max_connections=1000
+    default-time_zone = +8:00
+    character-set-server  = utf8
+    collation-server      = utf8_general_ci
+    # InnoDB tuning
+    innodb_log_file_size  = 50M
+    log-error=/var/lib/mysql/error.log
+    general_log=OFF
+    #general_log_file=/var/lib/mysql/mysql.log
+kind: ConfigMap
+metadata:
+  name: mysql-config-vol-nfs
+  namespace: yehuaqi

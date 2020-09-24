@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dpc  
+  name: redis-nodeport
+  labels:
+    app: redis-nodeport
+spec:
+  selector:
+    app: redis
+  ports:
+    - protocol: TCP
+      nodePort: 6380
+      port: 6379
+      targetPort: 6379
+      name: redis
+    - protocol: TCP
+      nodePort: 16380
+      port: 16379
+      targetPort: 16379
+      name: redis-lock
+    - protocol: TCP
+      nodePort: 26380
+      port: 26379
+      targetPort: 26379
+      name: redis-dpcsys 
+  type: NodePort

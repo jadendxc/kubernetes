@@ -290,16 +290,19 @@ metadata:
     app: redis
 spec:
   selector:
-    app: redis  
+    app: redis
   ports:
     - protocol: TCP
       port: 6379
+      targetPort: 6379
       name: redis
     - protocol: TCP
       port: 16379
+      targetPort: 16379
       name: redis-lock
     - protocol: TCP
       port: 26379
+      targetPort: 26379
       name: redis-dpcsys     
 ---
 apiVersion: apps/v1

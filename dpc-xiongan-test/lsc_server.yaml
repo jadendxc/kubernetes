@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lscserver
+  namespace: dpc-xiongan-test 
+  labels:
+    app: lscserver
+spec:
+  type: NodePort    
+  ports:
+  - protocol: TCP
+    port: 20010
+    targetPort: 20010
+    nodePort: 20011
+    name: lscserver
+  selector:
+    app: lscserver
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: lscserver
+  namespace: dpc-xiongan-test 
+spec:
+  selector:
+    matchLabels:
+      app: lscserver
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: lscserver
+    spec:
+      containers:
+      - name: lscserver
+        imagePullPolicy: Always
+        image: registry.tongxin.dpc.com/lscserver:0.0.1-SNAPSHOT
+        command:
+        - sh
+        - "-c"
+        - |
+          java -server -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationConcurrentTime -XX:+PrintGCApplicationStoppedTime -jar lscserver-0.0.1-SNAPSHOT.jar
+        ports:
+        - containerPort: 20010
